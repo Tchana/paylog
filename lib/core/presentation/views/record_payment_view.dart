@@ -97,7 +97,8 @@ class RecordPaymentView extends GetView<PaymentController> {
                             description: descriptionController.text,
                             programId: member.programId,
                           );
-                          Get.back();
+                          // Navigate to member details page instead of going back
+                          Get.offAllNamed('/member-detail', arguments: member);
                           Get.snackbar(
                             'Success',
                             'payment_recorded_success'.trParams({

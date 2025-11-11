@@ -65,7 +65,16 @@ class MemberDetailView extends GetView<MemberController> {
                         Text(member.contactInfo!),
                       ],
                       const SizedBox(height: 16),
-                      _buildBalanceInfo(context, member),
+                      Obx(() {
+                        // Find the updated member from the controller's list
+                        final updatedMember = controller.members.isNotEmpty
+                            ? controller.members.firstWhere(
+                                (m) => m.id == member.id,
+                                orElse: () => member,
+                              )
+                            : member;
+                        return _buildBalanceInfo(context, updatedMember);
+                      }),
                     ],
                   ),
                 ),
