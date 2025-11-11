@@ -104,7 +104,7 @@ class DataExportService {
     for (var payment in payments) {
       final member = memberMap[payment.memberId];
       final course = courseMap[payment.courseId];
-
+      
       final row = [
         payment.id,
         member?.name ?? 'Unknown',
@@ -113,7 +113,7 @@ class DataExportService {
         payment.date.toIso8601String(),
         payment.description ?? '',
       ].join(',');
-
+      
       csv.writeln(row);
     }
 

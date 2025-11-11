@@ -18,12 +18,12 @@ class ReportService {
   Future<void> generateMemberPaymentReport(Member member) async {
     final payments = await _paymentRepository.getPaymentsByMember(member.id);
     final courses = await _courseRepository.getAllCourses();
-
+    
     // Create course map for lookup
     final courseMap = {for (var course in courses) course.id: course};
-
+    
     final pdf = pw.Document();
-
+    
     pdf.addPage(
       pw.Page(
         build: (pw.Context context) {
@@ -84,7 +84,7 @@ class ReportService {
         },
       ),
     );
-
+    
     // Save the PDF
     final bytes = await pdf.save();
     final blob = html.Blob([bytes], 'application/pdf');
@@ -104,13 +104,13 @@ class ReportService {
     final payments = await _paymentRepository.getAllPayments();
     final members = await _memberRepository.getAllMembers();
     final courses = await _courseRepository.getAllCourses();
-
+    
     // Create maps for lookup
     final memberMap = {for (var member in members) member.id: member};
     final courseMap = {for (var course in courses) course.id: course};
-
+    
     final pdf = pw.Document();
-
+    
     pdf.addPage(
       pw.Page(
         build: (pw.Context context) {
@@ -119,7 +119,7 @@ class ReportService {
           for (var payment in payments) {
             totalPayments += payment.amount;
           }
-
+          
           return pw.Column(
             children: [
               pw.Header(
@@ -181,7 +181,7 @@ class ReportService {
         },
       ),
     );
-
+    
     // Save the PDF
     final bytes = await pdf.save();
     final blob = html.Blob([bytes], 'application/pdf');
