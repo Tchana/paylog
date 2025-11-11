@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:paylog/core/app/theme/app_theme.dart';
 import 'package:paylog/core/presentation/controllers/member_controller.dart';
+import 'package:paylog/core/services/report_service.dart';
 import 'package:paylog/data/models/member.dart';
 import 'package:paylog/data/models/payment.dart';
 
@@ -11,6 +12,7 @@ class MemberDetailView extends GetView<MemberController> {
   @override
   Widget build(BuildContext context) {
     final member = Get.arguments as Member;
+    final ReportService reportService = ReportService();
 
     // Fetch member payments every time the view is opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -20,6 +22,10 @@ class MemberDetailView extends GetView<MemberController> {
     return Scaffold(
       appBar: AppBar(
         title: Text(member.name),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -81,23 +87,18 @@ class MemberDetailView extends GetView<MemberController> {
               ),
               const SizedBox(height: 24),
               // Payment history
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'payment_history'.tr,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  Flexible(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Get.toNamed('/record-payment', arguments: member);
-                      },
-                      icon: const Icon(Icons.add),
-                      label: Text('record_payment'.tr),
-                    ),
-                  ),
-                ],
+              Text(
+                'payment_history'.tr,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 16),
+              // Record payment button moved here
+              ElevatedButton.icon(
+                onPressed: () {
+                  Get.toNamed('/record-payment', arguments: member);
+                },
+                icon: const Icon(Icons.add),
+                label: Text('record_payment'.tr),
               ),
               const SizedBox(height: 16),
               Obx(
@@ -114,13 +115,30 @@ class MemberDetailView extends GetView<MemberController> {
                       ),
               ),
               const SizedBox(height: 24),
-              // Action buttons
+              // Action buttons - removed back button, kept only download report
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Download report
+                      onPressed: () async {
+                        // Generate and download member report
+                        try {
+                          await reportService
+                              .generateMemberPaymentReport(member);
+                          Get.snackbar(
+                            'Success',
+                            'Report generated successfully',
+                            snackPosition: SnackPosition.BOTTOM,
+                          );
+                        } catch (e) {
+                          Get.snackbar(
+                            'Error',
+                            'Failed to generate report: $e',
+                            snackPosition: SnackPosition.BOTTOM,
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
                       },
                       icon: const Icon(Icons.download),
                       label: Text('download_report'.tr),

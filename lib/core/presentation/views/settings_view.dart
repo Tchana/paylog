@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:paylog/core/presentation/controllers/settings_controller.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -13,6 +14,7 @@ class _SettingsViewState extends State<SettingsView> {
   String _selectedLanguage = 'en_US';
   String _selectedCurrency = '₣';
   bool _isDarkMode = false;
+  final SettingsController settingsController = Get.put(SettingsController());
 
   @override
   void initState() {
@@ -83,7 +85,11 @@ class _SettingsViewState extends State<SettingsView> {
                   children: [
                     _buildExportDataButton(),
                     const SizedBox(height: 16),
+                    _buildExportPaymentsButton(),
+                    const SizedBox(height: 16),
                     _buildImportDataButton(),
+                    const SizedBox(height: 16),
+                    _buildGenerateReportButton(),
                   ],
                 ),
               ),
@@ -167,32 +173,66 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   Widget _buildExportDataButton() {
-    return ElevatedButton.icon(
-      onPressed: () {
-        // Export data functionality
-        Get.snackbar(
-          'Info',
-          'Export data functionality would be implemented here',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      },
-      icon: const Icon(Icons.download),
-      label: Text('export_data'.tr),
-    );
+    return Obx(() => ElevatedButton.icon(
+          onPressed: settingsController.isExporting.value
+              ? null
+              : () => settingsController.exportAllData(),
+          icon: settingsController.isExporting.value
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.download),
+          label: Text('export_data'.tr),
+        ));
+  }
+
+  Widget _buildExportPaymentsButton() {
+    return Obx(() => ElevatedButton.icon(
+          onPressed: settingsController.isExporting.value
+              ? null
+              : () => settingsController.exportPaymentsToCsv(),
+          icon: settingsController.isExporting.value
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.table_chart),
+          label: Text('export_payments'.tr),
+        ));
   }
 
   Widget _buildImportDataButton() {
-    return ElevatedButton.icon(
-      onPressed: () {
-        // Import data functionality
-        Get.snackbar(
-          'Info',
-          'Import data functionality would be implemented here',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      },
-      icon: const Icon(Icons.upload),
-      label: Text('import_data'.tr),
-    );
+    return Obx(() => ElevatedButton.icon(
+          onPressed: settingsController.isImporting.value
+              ? null
+              : () => settingsController.importData(),
+          icon: settingsController.isImporting.value
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.upload),
+          label: Text('import_data'.tr),
+        ));
+  }
+
+  Widget _buildGenerateReportButton() {
+    return Obx(() => ElevatedButton.icon(
+          onPressed: settingsController.isExporting.value
+              ? null
+              : () => settingsController.generateSummaryReport(),
+          icon: settingsController.isExporting.value
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.picture_as_pdf),
+          label: Text('generate_report'.tr),
+        ));
   }
 }
