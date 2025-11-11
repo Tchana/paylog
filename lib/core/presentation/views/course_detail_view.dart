@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:paylog/core/presentation/controllers/course_controller.dart';
+import 'package:paylog/core/presentation/controllers/member_controller.dart';
 import 'package:paylog/data/models/course.dart';
+import 'package:paylog/data/models/member.dart';
 
 class CourseDetailView extends GetView<CourseController> {
   const CourseDetailView({super.key});
@@ -9,6 +11,12 @@ class CourseDetailView extends GetView<CourseController> {
   @override
   Widget build(BuildContext context) {
     final course = Get.arguments as Course;
+    final memberController =
+        Get.find<MemberController>(); // Use existing instance
+
+    // Initialize member controller and course members
+    memberController.fetchMembersByProgramId(course.programId);
+    controller.fetchCourseMembers(course.id);
 
     return Scaffold(
       appBar: AppBar(
@@ -101,6 +109,8 @@ class CourseDetailView extends GetView<CourseController> {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         // Assign members to course
+                        _showAssignMembersDialog(
+                            context, course, memberController);
                       },
                       icon: const Icon(Icons.group_add),
                       label: Text('assign_members'.tr),
@@ -146,5 +156,106 @@ class CourseDetailView extends GetView<CourseController> {
         );
       },
     );
+  }
+
+  void _showAssignMembersDialog(
+      BuildContext context, Course course, MemberController memberController) {
+    final selectedMembers = <Member>{};
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Container(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'select_members'.tr,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  ),
+                  Obx(
+                    // Wrap with Obx to react to member changes
+                    () => memberController.members.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Text('no_members_yet'.tr),
+                          )
+                        : Expanded(
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: memberController.members.length,
+                              itemBuilder: (context, index) {
+                                final member = memberController.members[index];
+                                return CheckboxListTile(
+                                  title: Text(member.name),
+                                  subtitle: Text(member.contactInfo ?? ''),
+                                  value: selectedMembers.contains(member),
+                                  onChanged: (bool? value) {
+                                    setState(() {
+                                      if (value == true) {
+                                        selectedMembers.add(member);
+                                      } else {
+                                        selectedMembers.remove(member);
+                                      }
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Get.back();
+                            },
+                            child: Text('cancel'.tr),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Assign selected members to course
+                              _assignMembersToCourse(
+                                  course, selectedMembers.toList());
+                              Get.back();
+                              Get.snackbar(
+                                'Success',
+                                'Members assigned to course successfully',
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            },
+                            child: Text('done'.tr),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _assignMembersToCourse(Course course, List<Member> members) {
+    // Assign selected members to course
+    controller.assignMembersToCourse(course, members);
   }
 }

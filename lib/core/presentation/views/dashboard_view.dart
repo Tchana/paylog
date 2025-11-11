@@ -56,16 +56,16 @@ class DashboardView extends GetView<DashboardController> {
                 ],
               ),
               const SizedBox(height: 16),
-              // Create program button
+              // View all programs button
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        Get.toNamed('/add-program');
+                        Get.toNamed('/programs');
                       },
-                      icon: const Icon(Icons.add),
-                      label: Text('add_program'.tr),
+                      icon: const Icon(Icons.list),
+                      label: Text('view_all_programs'.tr),
                     ),
                   ),
                 ],
@@ -176,6 +176,12 @@ class DashboardView extends GetView<DashboardController> {
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Get.toNamed('/add-program');
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }

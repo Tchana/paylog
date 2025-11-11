@@ -92,16 +92,6 @@ class ProgramDetailView extends GetView<CourseController> {
                 )
               : Column(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Get.toNamed('/add-course', arguments: program);
-                        },
-                        icon: const Icon(Icons.add),
-                        label: Text('add_course'.tr),
-                      ),
-                    ),
                     Expanded(
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16.0),
@@ -164,16 +154,6 @@ class ProgramDetailView extends GetView<CourseController> {
                 )
               : Column(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Get.toNamed('/add-member', arguments: program);
-                        },
-                        icon: const Icon(Icons.add),
-                        label: Text('add_member'.tr),
-                      ),
-                    ),
                     Expanded(
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16.0),

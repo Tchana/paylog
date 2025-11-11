@@ -74,6 +74,11 @@ class AppTranslations extends Translations {
           'recent_payments': 'Recent Payments',
           'view_all_programs': 'View All Programs',
           'created_on': 'Created on',
+          'assign_members': 'Assign Members',
+          'enrolled_members': 'Enrolled Members',
+          'no_members_enrolled': 'No members enrolled yet',
+          'select_members': 'Select Members',
+          'done': 'Done',
         },
         'fr_FR': {
           'app_name': 'PayLog',
@@ -147,6 +152,11 @@ class AppTranslations extends Translations {
           'recent_payments': 'Paiements récents',
           'view_all_programs': 'Voir tous les programmes',
           'created_on': 'Créé le',
+          'assign_members': 'Attribuer des membres',
+          'enrolled_members': 'Membres inscrits',
+          'no_members_enrolled': 'Aucun membre inscrit pour le moment',
+          'select_members': 'Sélectionner des membres',
+          'done': 'Terminé',
         },
       };
 }

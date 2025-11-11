@@ -99,7 +99,10 @@ class RecordPaymentView extends GetView<PaymentController> {
                         Get.back();
                         Get.snackbar(
                           'Success',
-                          'Payment recorded successfully',
+                          'payment_recorded_success'.trParams({
+                            'name': member.name,
+                            'amount': memberController.formatCurrency(amount)
+                          }),
                           snackPosition: SnackPosition.BOTTOM,
                         );
                       }
