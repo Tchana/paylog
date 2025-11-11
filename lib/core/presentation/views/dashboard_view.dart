@@ -9,6 +9,11 @@ class DashboardView extends GetView<DashboardController> {
 
   @override
   Widget build(BuildContext context) {
+    // Load dashboard data after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.loadDashboardData();
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: Text('dashboard_title'.tr),
@@ -17,6 +22,7 @@ class DashboardView extends GetView<DashboardController> {
             icon: const Icon(Icons.settings),
             onPressed: () {
               // Navigate to settings
+              Get.toNamed('/settings');
             },
           ),
         ],
@@ -172,6 +178,21 @@ class DashboardView extends GetView<DashboardController> {
                           );
                         },
                       ),
+              ),
+              const SizedBox(height: 16),
+              // View all programs button
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Get.toNamed('/programs');
+                      },
+                      icon: const Icon(Icons.list),
+                      label: Text('view_all_programs'.tr),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

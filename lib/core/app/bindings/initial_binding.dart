@@ -18,6 +18,6 @@ class InitialBinding implements Bindings {
     Get.put(PaymentRepository()); // Register PaymentRepository
     Get.put(CourseController());
     Get.put(MemberController());
-    Get.lazyPut(() => PaymentController());
+    Get.put(PaymentController()); // Register PaymentController as a singleton
   }
 }

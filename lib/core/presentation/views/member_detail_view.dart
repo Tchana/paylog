@@ -12,6 +12,11 @@ class MemberDetailView extends GetView<MemberController> {
   Widget build(BuildContext context) {
     final member = Get.arguments as Member;
 
+    // Fetch member payments every time the view is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.fetchMemberPayments(member.id);
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: Text(member.name),
@@ -20,6 +25,14 @@ class MemberDetailView extends GetView<MemberController> {
             icon: const Icon(Icons.edit),
             onPressed: () {
               // Edit member
+              Get.toNamed('/edit-member', arguments: member);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              // Navigate to settings
+              Get.toNamed('/settings');
             },
           ),
           IconButton(
@@ -211,7 +224,7 @@ class MemberDetailView extends GetView<MemberController> {
       textCancel: 'cancel'.tr,
       confirmTextColor: Colors.white,
       onConfirm: () {
-        // Delete member logic would go here
+        controller.deleteMember(member.id);
         Get.back();
         Get.back();
         Get.snackbar(

@@ -13,6 +13,8 @@ class AppTranslations extends Translations {
           'add_program': 'Add Program',
           'add_course': 'Add Course',
           'add_member': 'Add Member',
+          'edit_member': 'Edit Member',
+          'edit_course': 'Edit Course',
           'record_payment': 'Record Payment',
           'program_name': 'Program Name',
           'program_description': 'Program Description',
@@ -64,6 +66,8 @@ class AppTranslations extends Translations {
           'search_members': 'Search members...',
           'filter_by_status': 'Filter by Status',
           'settings': 'Settings',
+          'app_settings': 'App Settings',
+          'data_management': 'Data Management',
           'language': 'Language',
           'currency': 'Currency',
           'dark_mode': 'Dark Mode',
@@ -79,6 +83,9 @@ class AppTranslations extends Translations {
           'no_members_enrolled': 'No members enrolled yet',
           'select_members': 'Select Members',
           'done': 'Done',
+          'success': 'Success',
+          'payment_recorded':
+              'Payment recorded successfully for {name} ({amount})',
         },
         'fr_FR': {
           'app_name': 'PayLog',
@@ -90,6 +97,8 @@ class AppTranslations extends Translations {
           'add_program': 'Ajouter un programme',
           'add_course': 'Ajouter un cours',
           'add_member': 'Ajouter un membre',
+          'edit_member': 'Modifier le membre',
+          'edit_course': 'Modifier le cours',
           'record_payment': 'Enregistrer un paiement',
           'program_name': 'Nom du programme',
           'program_description': 'Description du programme',
@@ -142,6 +151,8 @@ class AppTranslations extends Translations {
           'search_members': 'Rechercher des membres...',
           'filter_by_status': 'Filtrer par statut',
           'settings': 'Paramètres',
+          'app_settings': 'Paramètres de l\'application',
+          'data_management': 'Gestion des données',
           'language': 'Langue',
           'currency': 'Devise',
           'dark_mode': 'Mode sombre',
@@ -157,6 +168,9 @@ class AppTranslations extends Translations {
           'no_members_enrolled': 'Aucun membre inscrit pour le moment',
           'select_members': 'Sélectionner des membres',
           'done': 'Terminé',
+          'success': 'Succès',
+          'payment_recorded':
+              'Paiement enregistré avec succès pour {name} ({amount})',
         },
       };
 }

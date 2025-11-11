@@ -7,7 +7,10 @@ import 'package:paylog/core/presentation/views/member_detail_view.dart';
 import 'package:paylog/core/presentation/views/add_program_view.dart';
 import 'package:paylog/core/presentation/views/add_course_view.dart';
 import 'package:paylog/core/presentation/views/add_member_view.dart';
+import 'package:paylog/core/presentation/views/edit_member_view.dart';
+import 'package:paylog/core/presentation/views/edit_course_view.dart';
 import 'package:paylog/core/presentation/views/record_payment_view.dart';
+import 'package:paylog/core/presentation/views/settings_view.dart';
 
 class AppRoutes {
   static const String home = '/home';
@@ -18,7 +21,10 @@ class AppRoutes {
   static const String addProgram = '/add-program';
   static const String addCourse = '/add-course';
   static const String addMember = '/add-member';
+  static const String editMember = '/edit-member';
+  static const String editCourse = '/edit-course';
   static const String recordPayment = '/record-payment';
+  static const String settings = '/settings';
 }
 
 class AppPages {
@@ -56,8 +62,20 @@ class AppPages {
       page: () => const AddMemberView(),
     ),
     GetPage(
+      name: AppRoutes.editMember,
+      page: () => const EditMemberView(),
+    ),
+    GetPage(
+      name: AppRoutes.editCourse,
+      page: () => const EditCourseView(),
+    ),
+    GetPage(
       name: AppRoutes.recordPayment,
       page: () => const RecordPaymentView(),
+    ),
+    GetPage(
+      name: AppRoutes.settings,
+      page: () => const SettingsView(),
     ),
   ];
 }

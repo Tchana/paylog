@@ -85,26 +85,36 @@ class RecordPaymentView extends GetView<PaymentController> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (amountController.text.isNotEmpty) {
                         final amount =
                             double.tryParse(amountController.text) ?? 0.0;
-                        controller.recordPayment(
-                          memberId: member.id,
-                          amount: amount,
-                          date: DateTime.now(),
-                          description: descriptionController.text,
-                          programId: member.programId,
-                        );
-                        Get.back();
-                        Get.snackbar(
-                          'Success',
-                          'payment_recorded_success'.trParams({
-                            'name': member.name,
-                            'amount': memberController.formatCurrency(amount)
-                          }),
-                          snackPosition: SnackPosition.BOTTOM,
-                        );
+                        try {
+                          await controller.recordPayment(
+                            memberId: member.id,
+                            amount: amount,
+                            date: DateTime.now(),
+                            description: descriptionController.text,
+                            programId: member.programId,
+                          );
+                          Get.back();
+                          Get.snackbar(
+                            'Success',
+                            'payment_recorded_success'.trParams({
+                              'name': member.name,
+                              'amount': memberController.formatCurrency(amount)
+                            }),
+                            snackPosition: SnackPosition.BOTTOM,
+                          );
+                        } catch (e) {
+                          Get.snackbar(
+                            'Error',
+                            'Failed to record payment: $e',
+                            snackPosition: SnackPosition.BOTTOM,
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
                       }
                     },
                     child: Text('save'.tr),

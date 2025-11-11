@@ -11,12 +11,13 @@ class CourseDetailView extends GetView<CourseController> {
   @override
   Widget build(BuildContext context) {
     final course = Get.arguments as Course;
-    final memberController =
-        Get.find<MemberController>(); // Use existing instance
+    final memberController = Get.find<MemberController>();
 
-    // Initialize member controller and course members
-    memberController.fetchMembersByProgramId(course.programId);
-    controller.fetchCourseMembers(course.id);
+    // Fetch data when the view is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      memberController.fetchMembersByProgramId(course.programId);
+      controller.fetchCourseMembers(course.id);
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -26,6 +27,14 @@ class CourseDetailView extends GetView<CourseController> {
             icon: const Icon(Icons.edit),
             onPressed: () {
               // Edit course
+              Get.toNamed('/edit-course', arguments: course);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              // Navigate to settings
+              Get.toNamed('/settings');
             },
           ),
           IconButton(

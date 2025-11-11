@@ -1,70 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:paylog/core/presentation/controllers/program_controller.dart';
 import 'package:paylog/core/presentation/controllers/course_controller.dart';
 import 'package:paylog/core/presentation/controllers/member_controller.dart';
 import 'package:paylog/data/models/program.dart';
 
-class ProgramDetailView extends GetView<CourseController> {
+class ProgramDetailView extends GetView<ProgramController> {
   const ProgramDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
     final program = Get.arguments as Program;
-    final memberController = Get.put(MemberController());
+    final courseController = Get.find<CourseController>();
+    final memberController = Get.find<MemberController>();
 
-    // Fetch courses and members when the view is built
+    // Fetch data after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.fetchCoursesByProgramId(program.id);
+      courseController.fetchCoursesByProgramId(program.id);
       memberController.fetchMembersByProgramId(program.id);
     });
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(program.name),
-          bottom: TabBar(
-            tabs: [
-              Tab(text: 'courses_title'.tr),
-              Tab(text: 'members_title'.tr),
-              Tab(text: 'summary'.tr),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(program.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              // Navigate to settings
+              Get.toNamed('/settings');
+            },
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                // Edit program
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () {
-                _confirmDeleteProgram(context, program);
-              },
-            ),
-          ],
-        ),
-        body: TabBarView(
-          children: [
-            // Courses tab
-            _buildCoursesTab(context, program),
-            // Members tab
-            _buildMembersTab(context, program, memberController),
-            // Summary tab
-            _buildSummaryTab(context, program),
-          ],
-        ),
-        floatingActionButton: _buildFloatingActionButton(context, program),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () {
+              _confirmDeleteProgram(context, program);
+            },
+          ),
+        ],
       ),
+      body: DefaultTabController(
+        length: 3,
+        child: Column(
+          children: [
+            TabBar(
+              tabs: [
+                Tab(text: 'summary'.tr),
+                Tab(text: 'courses_title'.tr),
+                Tab(text: 'members_title'.tr),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildSummaryTab(context, program, memberController),
+                  _buildCoursesTab(context, program, courseController),
+                  _buildMembersTab(context, program, memberController),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: _buildFloatingActionButton(context, program),
     );
   }
 
-  Widget _buildCoursesTab(BuildContext context, Program program) {
+  Widget _buildCoursesTab(BuildContext context, Program program,
+      CourseController courseController) {
     return Obx(
-      () => controller.isLoading.value
+      () => courseController.isLoading.value
           ? const Center(child: CircularProgressIndicator())
-          : controller.courses.isEmpty
+          : courseController.courses.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -90,33 +97,25 @@ class ProgramDetailView extends GetView<CourseController> {
                     ],
                   ),
                 )
-              : Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16.0),
-                        itemCount: controller.courses.length,
-                        itemBuilder: (context, index) {
-                          final course = controller.courses[index];
-                          return Card(
-                            child: ListTile(
-                              title: Text(
-                                course.name,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              subtitle:
-                                  Text('₣${course.fee.toStringAsFixed(0)}'),
-                              trailing: const Icon(Icons.arrow_forward_ios),
-                              onTap: () {
-                                Get.toNamed('/course-detail',
-                                    arguments: course);
-                              },
-                            ),
-                          );
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: courseController.courses.length,
+                  itemBuilder: (context, index) {
+                    final course = courseController.courses[index];
+                    return Card(
+                      child: ListTile(
+                        title: Text(
+                          course.name,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        subtitle: Text('₣${course.fee.toStringAsFixed(0)}'),
+                        trailing: const Icon(Icons.arrow_forward_ios),
+                        onTap: () {
+                          Get.toNamed('/course-detail', arguments: course);
                         },
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
     );
   }
@@ -152,37 +151,33 @@ class ProgramDetailView extends GetView<CourseController> {
                     ],
                   ),
                 )
-              : Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16.0),
-                        itemCount: memberController.members.length,
-                        itemBuilder: (context, index) {
-                          final member = memberController.members[index];
-                          return Card(
-                            child: ListTile(
-                              title: Text(
-                                member.name,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              subtitle: Text(member.contactInfo ?? ''),
-                              trailing: const Icon(Icons.arrow_forward_ios),
-                              onTap: () {
-                                Get.toNamed('/member-detail',
-                                    arguments: member);
-                              },
-                            ),
-                          );
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: memberController.members.length,
+                  itemBuilder: (context, index) {
+                    final member = memberController.members[index];
+                    return Card(
+                      child: ListTile(
+                        title: Text(
+                          member.name,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        subtitle: Text(member.contactInfo ?? ''),
+                        trailing: const Icon(Icons.arrow_forward_ios),
+                        onTap: () {
+                          Get.toNamed('/member-detail', arguments: member);
                         },
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
     );
   }
 
-  Widget _buildSummaryTab(BuildContext context, Program program) {
+  Widget _buildSummaryTab(BuildContext context, Program program,
+      MemberController memberController) {
+    final courseController = Get.find<CourseController>();
+
     return Obx(
       () => Padding(
         padding: const EdgeInsets.all(16.0),
@@ -223,7 +218,7 @@ class ProgramDetailView extends GetView<CourseController> {
                       child: Column(
                         children: [
                           Text(
-                            '${controller.courses.length}',
+                            '${courseController.courses.length}',
                             style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           Text('courses_title'.tr),
@@ -240,7 +235,7 @@ class ProgramDetailView extends GetView<CourseController> {
                       child: Column(
                         children: [
                           Text(
-                            '${Get.find<MemberController>().members.length}',
+                            '${memberController.members.length}',
                             style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           Text('members_title'.tr),
@@ -306,7 +301,7 @@ class ProgramDetailView extends GetView<CourseController> {
       textCancel: 'cancel'.tr,
       confirmTextColor: Colors.white,
       onConfirm: () {
-        // Delete program logic would go here
+        controller.deleteProgram(program.id);
         Get.back();
         Get.back();
         Get.snackbar(
