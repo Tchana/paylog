@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:html' as html;
+import 'package:file_picker/file_picker.dart';
+import 'package:paylog/core/services/platform/data_import_service_interface.dart';
 import 'package:paylog/data/models/program.dart';
 import 'package:paylog/data/models/course.dart';
 import 'package:paylog/data/models/member.dart';
@@ -9,13 +10,13 @@ import 'package:paylog/data/repositories/course_repository.dart';
 import 'package:paylog/data/repositories/member_repository.dart';
 import 'package:paylog/data/repositories/payment_repository.dart';
 
-class DataImportService {
+class DataImportServiceMobile implements DataImportServiceInterface {
   final ProgramRepository _programRepository = ProgramRepository();
   final CourseRepository _courseRepository = CourseRepository();
   final MemberRepository _memberRepository = MemberRepository();
   final PaymentRepository _paymentRepository = PaymentRepository();
 
-  // Import data from JSON
+  @override
   Future<void> importDataFromJson(String jsonData) async {
     final data = jsonDecode(jsonData);
 
@@ -114,21 +115,27 @@ class DataImportService {
     }
   }
 
-  // Select file for import
+  @override
   Future<String?> selectFileForImport() async {
-    final input = html.FileUploadInputElement()..accept = '.json';
-    input.click();
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
 
-    await input.onChange.first;
+      if (result != null && result.files.single.path != null) {
+        final file = result.files.single;
+        if (file.bytes != null) {
+          return String.fromCharCodes(file.bytes!);
+        } else if (file.path != null) {
+          // For web, we need to read the file differently
+          return null; // Web implementation would need a different approach
+        }
+      }
 
-    if (input.files!.isEmpty) return null;
-
-    final file = input.files!.first;
-    final reader = html.FileReader();
-
-    reader.readAsText(file);
-    await reader.onLoad.first;
-
-    return reader.result as String?;
+      return null;
+    } catch (e) {
+      rethrow;
+    }
   }
 }

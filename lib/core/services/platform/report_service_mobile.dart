@@ -1,29 +1,32 @@
-import 'dart:html' as html;
+import 'dart:typed_data';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:paylog/core/services/platform/report_service_interface.dart';
 import 'package:paylog/data/models/member.dart';
 import 'package:paylog/data/models/payment.dart';
 import 'package:paylog/data/models/course.dart';
 import 'package:paylog/data/repositories/member_repository.dart';
 import 'package:paylog/data/repositories/payment_repository.dart';
 import 'package:paylog/data/repositories/course_repository.dart';
-import 'package:paylog/core/presentation/controllers/member_controller.dart';
+import 'dart:io' as io;
 
-class ReportService {
+class ReportServiceMobile implements ReportServiceInterface {
   final MemberRepository _memberRepository = MemberRepository();
   final PaymentRepository _paymentRepository = PaymentRepository();
   final CourseRepository _courseRepository = CourseRepository();
 
-  // Generate member payment report PDF
+  @override
   Future<void> generateMemberPaymentReport(Member member) async {
     final payments = await _paymentRepository.getPaymentsByMember(member.id);
     final courses = await _courseRepository.getAllCourses();
-    
+
     // Create course map for lookup
     final courseMap = {for (var course in courses) course.id: course};
-    
+
     final pdf = pw.Document();
-    
+
     pdf.addPage(
       pw.Page(
         build: (pw.Context context) {
@@ -33,7 +36,10 @@ class ReportService {
                 level: 0,
                 child: pw.Text(
                   'Payment Report for ${member.name}',
-                  style: pw.TextStyle(fontSize: 24),
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    font: pw.Font.helveticaBold(),
+                  ),
                 ),
               ),
               pw.SizedBox(height: 20),
@@ -41,17 +47,27 @@ class ReportService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                      'Account Balance: ${member.accountBalance.toStringAsFixed(2)}'),
-                  pw.Text('Total Debt: ${member.totalDebt.toStringAsFixed(2)}'),
+                    'Account Balance: ${member.accountBalance.toStringAsFixed(2)}',
+                    style: pw.TextStyle(font: pw.Font.helvetica()),
+                  ),
                   pw.Text(
-                      'Pending Balance: ${member.pendingBalance.toStringAsFixed(2)}'),
+                    'Total Debt: ${member.totalDebt.toStringAsFixed(2)}',
+                    style: pw.TextStyle(font: pw.Font.helvetica()),
+                  ),
+                  pw.Text(
+                    'Pending Balance: ${member.pendingBalance.toStringAsFixed(2)}',
+                    style: pw.TextStyle(font: pw.Font.helvetica()),
+                  ),
                 ],
               ),
               pw.SizedBox(height: 20),
               pw.Text(
                 'Payment History',
-                style:
-                    pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  font: pw.Font.helveticaBold(),
+                ),
               ),
               pw.SizedBox(height: 10),
               pw.Table.fromTextArray(
@@ -67,7 +83,10 @@ class ReportService {
                     payment.description ?? '',
                   ];
                 }).toList(),
-                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  font: pw.Font.helveticaBold(),
+                ),
                 border: pw.TableBorder.all(),
                 headerDecoration: pw.BoxDecoration(
                   color: PdfColors.grey300,
@@ -77,40 +96,35 @@ class ReportService {
               pw.SizedBox(height: 20),
               pw.Text(
                 'Report Generated on ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-                style: pw.TextStyle(fontSize: 12, color: PdfColors.grey),
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  color: PdfColors.grey,
+                  font: pw.Font.helvetica(),
+                ),
               ),
             ],
           );
         },
       ),
     );
-    
-    // Save the PDF
-    final bytes = await pdf.save();
-    final blob = html.Blob([bytes], 'application/pdf');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.document.createElement('a') as html.AnchorElement
-      ..href = url
-      ..style.display = 'none'
-      ..download = 'payment_report_${member.name.replaceAll(' ', '_')}.pdf';
-    html.document.body!.children.add(anchor);
-    anchor.click();
-    html.document.body!.children.remove(anchor);
-    html.Url.revokeObjectUrl(url);
+
+    // Save and share the PDF
+    await _saveAndSharePdf(
+        pdf, 'payment_report_${member.name.replaceAll(' ', '_')}.pdf');
   }
 
-  // Generate summary report for all payments
+  @override
   Future<void> generateSummaryReport() async {
     final payments = await _paymentRepository.getAllPayments();
     final members = await _memberRepository.getAllMembers();
     final courses = await _courseRepository.getAllCourses();
-    
+
     // Create maps for lookup
     final memberMap = {for (var member in members) member.id: member};
     final courseMap = {for (var course in courses) course.id: course};
-    
+
     final pdf = pw.Document();
-    
+
     pdf.addPage(
       pw.Page(
         build: (pw.Context context) {
@@ -119,14 +133,17 @@ class ReportService {
           for (var payment in payments) {
             totalPayments += payment.amount;
           }
-          
+
           return pw.Column(
             children: [
               pw.Header(
                 level: 0,
                 child: pw.Text(
                   'Payment Summary Report',
-                  style: pw.TextStyle(fontSize: 24),
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    font: pw.Font.helveticaBold(),
+                  ),
                 ),
               ),
               pw.SizedBox(height: 20),
@@ -135,19 +152,28 @@ class ReportService {
                 children: [
                   pw.Text(
                     'Total Payments: ${payments.length}',
-                    style: pw.TextStyle(fontSize: 16),
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      font: pw.Font.helvetica(),
+                    ),
                   ),
                   pw.Text(
                     'Total Amount: ${totalPayments.toStringAsFixed(2)}',
-                    style: pw.TextStyle(fontSize: 16),
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      font: pw.Font.helvetica(),
+                    ),
                   ),
                 ],
               ),
               pw.SizedBox(height: 20),
               pw.Text(
                 'Payment Details',
-                style:
-                    pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  font: pw.Font.helveticaBold(),
+                ),
               ),
               pw.SizedBox(height: 10),
               pw.Table.fromTextArray(
@@ -164,7 +190,10 @@ class ReportService {
                     '${payment.date.day}/${payment.date.month}/${payment.date.year}',
                   ];
                 }).toList(),
-                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  font: pw.Font.helveticaBold(),
+                ),
                 border: pw.TableBorder.all(),
                 headerDecoration: pw.BoxDecoration(
                   color: PdfColors.grey300,
@@ -174,26 +203,53 @@ class ReportService {
               pw.SizedBox(height: 20),
               pw.Text(
                 'Report Generated on ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-                style: pw.TextStyle(fontSize: 12, color: PdfColors.grey),
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  color: PdfColors.grey,
+                  font: pw.Font.helvetica(),
+                ),
               ),
             ],
           );
         },
       ),
     );
-    
-    // Save the PDF
-    final bytes = await pdf.save();
-    final blob = html.Blob([bytes], 'application/pdf');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.document.createElement('a') as html.AnchorElement
-      ..href = url
-      ..style.display = 'none'
-      ..download =
-          'summary_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
-    html.document.body!.children.add(anchor);
-    anchor.click();
-    html.document.body!.children.remove(anchor);
-    html.Url.revokeObjectUrl(url);
+
+    // Save and share the PDF
+    await _saveAndSharePdf(
+        pdf, 'summary_report_${DateTime.now().millisecondsSinceEpoch}.pdf');
+  }
+
+  // Save and share PDF
+  Future<void> _saveAndSharePdf(pw.Document pdf, String filename) async {
+    try {
+      final bytes = await pdf.save();
+
+      // Try to get the application documents directory
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/$filename';
+        final file = io.File(filePath);
+
+        await file.writeAsBytes(bytes);
+        await Share.shareFiles([filePath], subject: filename);
+      } catch (pathException) {
+        // If we can't get the documents directory, try to use a temporary directory
+        try {
+          final tempDir = await getTemporaryDirectory();
+          final filePath = '${tempDir.path}/$filename';
+          final file = io.File(filePath);
+
+          await file.writeAsBytes(bytes);
+          await Share.shareFiles([filePath], subject: filename);
+        } catch (tempException) {
+          // If both fail, rethrow the original path exception
+          throw pathException;
+        }
+      }
+    } catch (e) {
+      // Re-throw the exception so it can be handled by the calling code
+      rethrow;
+    }
   }
 }

@@ -1,24 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:paylog/core/services/data_export_service.dart';
-import 'package:paylog/core/services/data_import_service.dart';
-import 'package:paylog/core/services/report_service.dart';
+import 'package:paylog/core/services/platform/platform_service_factory.dart';
+import 'package:paylog/core/services/platform/data_export_service_interface.dart';
+import 'package:paylog/core/services/platform/data_import_service_interface.dart';
+import 'package:paylog/core/services/platform/report_service_interface.dart';
 
 class SettingsController extends GetxController {
-  final DataExportService _exportService = DataExportService();
-  final DataImportService _importService = DataImportService();
-  final ReportService _reportService = ReportService();
+  late DataExportServiceInterface _exportService;
+  late DataImportServiceInterface _importService;
+  late ReportServiceInterface _reportService;
 
   var isExporting = false.obs;
   var isImporting = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Initialize services using the platform service factory
+    _exportService = PlatformServiceFactory.createDataExportService();
+    _importService = PlatformServiceFactory.createDataImportService();
+    _reportService = PlatformServiceFactory.createReportService();
+  }
 
   // Export all data to JSON
   Future<void> exportAllData() async {
     try {
       isExporting.value = true;
       final jsonData = await _exportService.exportAllDataToJson();
-      _exportService.downloadJsonFile(jsonData,
-          'paylog_export_${DateTime.now().millisecondsSinceEpoch}.json');
+      await _exportService.saveAndShareFile(
+          jsonData,
+          'paylog_export_${DateTime.now().millisecondsSinceEpoch}.json',
+          'application/json');
       Get.snackbar(
         'Success',
         'Data exported successfully',
@@ -42,8 +54,8 @@ class SettingsController extends GetxController {
     try {
       isExporting.value = true;
       final csvData = await _exportService.exportPaymentsToCsv();
-      _exportService.downloadCsvFile(
-          csvData, 'payments_${DateTime.now().millisecondsSinceEpoch}.csv');
+      await _exportService.saveAndShareFile(csvData,
+          'payments_${DateTime.now().millisecondsSinceEpoch}.csv', 'text/csv');
       Get.snackbar(
         'Success',
         'Payments exported successfully',

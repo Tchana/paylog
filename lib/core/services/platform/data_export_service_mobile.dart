@@ -1,5 +1,7 @@
 import 'dart:convert';
-import 'dart:html' as html;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:paylog/core/services/platform/data_export_service_interface.dart';
 import 'package:paylog/data/models/program.dart';
 import 'package:paylog/data/models/course.dart';
 import 'package:paylog/data/models/member.dart';
@@ -8,8 +10,9 @@ import 'package:paylog/data/repositories/program_repository.dart';
 import 'package:paylog/data/repositories/course_repository.dart';
 import 'package:paylog/data/repositories/member_repository.dart';
 import 'package:paylog/data/repositories/payment_repository.dart';
+import 'dart:io' as io;
 
-class DataExportService {
+class DataExportServiceMobile implements DataExportServiceInterface {
   final ProgramRepository _programRepository = ProgramRepository();
   final CourseRepository _courseRepository = CourseRepository();
   final MemberRepository _memberRepository = MemberRepository();
@@ -68,7 +71,7 @@ class DataExportService {
     };
   }
 
-  // Export all data to JSON
+  @override
   Future<String> exportAllDataToJson() async {
     final programs = await _programRepository.getAllPrograms();
     final courses = await _courseRepository.getAllCourses();
@@ -86,7 +89,7 @@ class DataExportService {
     return jsonEncode(exportData);
   }
 
-  // Export data to CSV
+  @override
   Future<String> exportPaymentsToCsv() async {
     final payments = await _paymentRepository.getAllPayments();
     final members = await _memberRepository.getAllMembers();
@@ -104,7 +107,7 @@ class DataExportService {
     for (var payment in payments) {
       final member = memberMap[payment.memberId];
       final course = courseMap[payment.courseId];
-      
+
       final row = [
         payment.id,
         member?.name ?? 'Unknown',
@@ -113,38 +116,25 @@ class DataExportService {
         payment.date.toIso8601String(),
         payment.description ?? '',
       ].join(',');
-      
+
       csv.writeln(row);
     }
 
     return csv.toString();
   }
 
-  // Download JSON file
-  void downloadJsonFile(String jsonData, String filename) {
-    final blob = html.Blob([jsonData], 'application/json');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.document.createElement('a') as html.AnchorElement
-      ..href = url
-      ..style.display = 'none'
-      ..download = filename;
-    html.document.body!.children.add(anchor);
-    anchor.click();
-    html.document.body!.children.remove(anchor);
-    html.Url.revokeObjectUrl(url);
-  }
+  @override
+  Future<void> saveAndShareFile(
+      String data, String filename, String mimeType) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/$filename';
+      final file = io.File(filePath);
 
-  // Download CSV file
-  void downloadCsvFile(String csvData, String filename) {
-    final blob = html.Blob([csvData], 'text/csv');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.document.createElement('a') as html.AnchorElement
-      ..href = url
-      ..style.display = 'none'
-      ..download = filename;
-    html.document.body!.children.add(anchor);
-    anchor.click();
-    html.document.body!.children.remove(anchor);
-    html.Url.revokeObjectUrl(url);
+      await file.writeAsString(data);
+      await Share.shareFiles([filePath], subject: filename);
+    } catch (e) {
+      rethrow;
+    }
   }
 }

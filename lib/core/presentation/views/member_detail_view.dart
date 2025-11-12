@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:paylog/core/app/theme/app_theme.dart';
 import 'package:paylog/core/presentation/controllers/member_controller.dart';
-import 'package:paylog/core/services/report_service.dart';
+// Use the platform service factory for proper platform detection
+import 'package:paylog/core/services/platform/platform_service_factory.dart';
+import 'package:paylog/core/services/platform/report_service_interface.dart';
 import 'package:paylog/data/models/member.dart';
 import 'package:paylog/data/models/payment.dart';
+import 'package:paylog/data/repositories/course_repository.dart';
 
 class MemberDetailView extends GetView<MemberController> {
   const MemberDetailView({super.key});
@@ -12,7 +15,9 @@ class MemberDetailView extends GetView<MemberController> {
   @override
   Widget build(BuildContext context) {
     final member = Get.arguments as Member;
-    final ReportService reportService = ReportService();
+    // Use the factory to create the appropriate report service
+    final ReportServiceInterface reportService =
+        PlatformServiceFactory.createReportService();
 
     // Fetch member payments every time the view is opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -127,7 +132,7 @@ class MemberDetailView extends GetView<MemberController> {
                               .generateMemberPaymentReport(member);
                           Get.snackbar(
                             'Success',
-                            'Report generated successfully',
+                            'Report generated and shared successfully',
                             snackPosition: SnackPosition.BOTTOM,
                           );
                         } catch (e) {
@@ -203,13 +208,16 @@ class MemberDetailView extends GetView<MemberController> {
           children: [
             Flexible(
               child: Text(
-                'total_paid'.tr,
+                'total_debt'.tr,
                 overflow: TextOverflow.fade,
               ),
             ),
             Text(
-              controller.formatCurrency(member.accountBalance),
-              style: const TextStyle(
+              controller.formatCurrency(member.totalDebt),
+              style: TextStyle(
+                color: member.totalDebt > 0
+                    ? AppTheme.errorColor
+                    : AppTheme.successColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -221,11 +229,30 @@ class MemberDetailView extends GetView<MemberController> {
 
   Widget _buildPaymentCard(BuildContext context, Payment payment) {
     return Card(
+      margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         title: Text(controller.formatCurrency(payment.amount)),
-        subtitle: Text(
-            '${payment.date.day}/${payment.date.month}/${payment.date.year}'),
-        trailing: Text(payment.description ?? ''),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (payment.description != null) ...[
+              Text(payment.description!),
+              const SizedBox(height: 4),
+            ],
+            Text(
+              _formatDate(payment.date),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        trailing: Text(
+          _getCourseName(payment.courseId),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        onTap: () {
+          // Navigate to edit payment screen
+          Get.toNamed('/edit-payment', arguments: payment);
+        },
       ),
     );
   }
@@ -233,33 +260,71 @@ class MemberDetailView extends GetView<MemberController> {
   Widget _buildEmptyState(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Text(
-          'no_payments_yet'.tr,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge,
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          children: [
+            Icon(
+              Icons.payment,
+              size: 48,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'no_payments_recorded'.tr,
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'record_first_payment'.tr,
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
   }
 
   void _confirmDeleteMember(BuildContext context, Member member) {
-    Get.defaultDialog(
-      title: 'are_you_sure'.tr,
-      middleText: 'confirm_delete_member'.tr,
-      textConfirm: 'delete'.tr,
-      textCancel: 'cancel'.tr,
-      confirmTextColor: Colors.white,
-      onConfirm: () {
-        controller.deleteMember(member.id);
-        Get.back();
-        Get.back();
-        Get.snackbar(
-          'Success',
-          'Member deleted successfully',
-          snackPosition: SnackPosition.BOTTOM,
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('delete_member'.tr),
+          content:
+              Text('confirm_delete_member'.trParams({'name': member.name})),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('cancel'.tr),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                controller.deleteMember(member.id);
+                Get.back();
+              },
+              child: Text(
+                'delete'.tr,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
         );
       },
     );
+  }
+
+  // Helper methods to format date and get course name
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  String _getCourseName(String? courseId) {
+    if (courseId == null) return 'General Payment';
+    // In a real implementation, we would fetch the course name from the repository
+    // For now, we'll just return a placeholder
+    return 'Course';
   }
 }
