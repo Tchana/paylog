@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
+import 'package:paylog/data/models/allocation_entry.dart';
 
 part 'payment.g.dart';
 
@@ -32,6 +33,9 @@ class Payment extends HiveObject {
   @HiveField(8)
   final String programId;
 
+  @HiveField(9)
+  final List<AllocationEntry> autoAssignedCourses;
+
   Payment({
     String? id,
     required this.memberId,
@@ -40,10 +44,12 @@ class Payment extends HiveObject {
     DateTime? date,
     this.description,
     required this.programId,
+    List<AllocationEntry>? autoAssignedCourses,
   })  : id = id ?? const Uuid().v1(),
         date = date ?? DateTime.now(),
         createdAt = DateTime.now(),
-        updatedAt = DateTime.now();
+        updatedAt = DateTime.now(),
+        autoAssignedCourses = autoAssignedCourses ?? <AllocationEntry>[];
 
   void updateTimestamp() {
     updatedAt = DateTime.now();

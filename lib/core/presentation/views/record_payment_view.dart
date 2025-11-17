@@ -20,7 +20,7 @@ class RecordPaymentView extends GetView<PaymentController> {
         title: Text('record_payment'.tr),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
+          onPressed: () => Get.back(result: false),
         ),
       ),
       body: Padding(
@@ -78,7 +78,7 @@ class RecordPaymentView extends GetView<PaymentController> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => Get.back(),
+                    onPressed: () => Get.back(result: false),
                     child: Text('cancel'.tr),
                   ),
                 ),
@@ -97,16 +97,8 @@ class RecordPaymentView extends GetView<PaymentController> {
                             description: descriptionController.text,
                             programId: member.programId,
                           );
-                          // Navigate to member details page instead of going back
-                          Get.offAllNamed('/member-detail', arguments: member);
-                          Get.snackbar(
-                            'Success',
-                            'payment_recorded_success'.trParams({
-                              'name': member.name,
-                              'amount': memberController.formatCurrency(amount)
-                            }),
-                            snackPosition: SnackPosition.BOTTOM,
-                          );
+                          // Navigate back to member details page
+                          Get.back(result: true);
                         } catch (e) {
                           Get.snackbar(
                             'Error',

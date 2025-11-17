@@ -11,10 +11,12 @@ import 'package:paylog/core/presentation/views/edit_member_view.dart';
 import 'package:paylog/core/presentation/views/edit_course_view.dart';
 import 'package:paylog/core/presentation/views/record_payment_view.dart';
 import 'package:paylog/core/presentation/views/settings_view.dart';
+import 'package:paylog/core/presentation/views/members_list_view.dart';
 
 class AppRoutes {
   static const String home = '/home';
   static const String programs = '/programs';
+  static const String members = '/members';
   static const String programDetail = '/program-detail';
   static const String courseDetail = '/course-detail';
   static const String memberDetail = '/member-detail';
@@ -76,6 +78,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.settings,
       page: () => const SettingsView(),
+    ),
+    GetPage(
+      name: AppRoutes.members,
+      page: () => const MembersListView(),
     ),
   ];
 }

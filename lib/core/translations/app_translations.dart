@@ -47,7 +47,9 @@ class AppTranslations extends Translations {
           'account_balance': 'Account Balance',
           'pending_amount': 'Pending Amount',
           'total_paid': 'Total Paid',
+          'total_debt': 'Total Debt',
           'payment_history': 'Payment History',
+          'auto_assigned_courses': 'Auto-assigned courses',
           'download_report': 'Download Report',
           'are_you_sure': 'Are you sure?',
           'confirm_delete_program':
@@ -134,7 +136,9 @@ class AppTranslations extends Translations {
           'account_balance': 'Solde du compte',
           'pending_amount': 'Montant en attente',
           'total_paid': 'Total payé',
+          'total_debt': 'Dette totale',
           'payment_history': 'Historique des paiements',
+          'auto_assigned_courses': 'Cours auto-attribués',
           'download_report': 'Télécharger le rapport',
           'are_you_sure': 'Êtes-vous sûr ?',
           'confirm_delete_program':

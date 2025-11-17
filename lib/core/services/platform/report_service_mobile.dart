@@ -1,16 +1,15 @@
-import 'dart:typed_data';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:pdf/pdf.dart';
+import 'dart:io' as io;
+
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:paylog/core/services/platform/report_service_interface.dart';
 import 'package:paylog/data/models/member.dart';
-import 'package:paylog/data/models/payment.dart';
-import 'package:paylog/data/models/course.dart';
+import 'package:paylog/data/repositories/course_repository.dart';
+import 'package:paylog/data/repositories/enrollment_repository.dart';
 import 'package:paylog/data/repositories/member_repository.dart';
 import 'package:paylog/data/repositories/payment_repository.dart';
-import 'package:paylog/data/repositories/course_repository.dart';
-import 'dart:io' as io;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:share_plus/share_plus.dart';
 
 class ReportServiceMobile implements ReportServiceInterface {
   final MemberRepository _memberRepository = MemberRepository();
@@ -21,6 +20,7 @@ class ReportServiceMobile implements ReportServiceInterface {
   Future<void> generateMemberPaymentReport(Member member) async {
     final payments = await _paymentRepository.getPaymentsByMember(member.id);
     final courses = await _courseRepository.getAllCourses();
+    final enrollments = await EnrollmentRepository().getEnrollmentsByMember(member.id);
 
     // Create course map for lookup
     final courseMap = {for (var course in courses) course.id: course};
@@ -70,17 +70,57 @@ class ReportServiceMobile implements ReportServiceInterface {
                 ),
               ),
               pw.SizedBox(height: 10),
-              pw.Table.fromTextArray(
+              pw.TableHelper.fromTextArray(
                 headers: ['Date', 'Course', 'Amount', 'Description'],
-                data: payments.map((payment) {
-                  final course = payment.courseId != null
-                      ? courseMap[payment.courseId]
-                      : null;
+                data: [
+                  for (final payment in payments)
+                    if (payment.autoAssignedCourses.isNotEmpty)
+                      ...payment.autoAssignedCourses.map((a) => [
+                            '${payment.date.day}/${payment.date.month}/${payment.date.year}',
+                            a.courseName,
+                            a.amountApplied.toStringAsFixed(2),
+                            payment.description ?? '',
+                          ])
+                    else
+                      [
+                        '${payment.date.day}/${payment.date.month}/${payment.date.year}',
+                        'General Payment',
+                        payment.amount.toStringAsFixed(2),
+                        payment.description ?? '',
+                      ]
+                ],
+                headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  font: pw.Font.helveticaBold(),
+                ),
+                border: pw.TableBorder.all(),
+                headerDecoration: const pw.BoxDecoration(
+                  color: PdfColors.grey300,
+                ),
+                cellAlignment: pw.Alignment.centerLeft,
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'Per-course Summary',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  font: pw.Font.helveticaBold(),
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              pw.TableHelper.fromTextArray(
+                headers: ['Course', 'Fee', 'Paid', 'Balance'],
+                data: enrollments.map((enrollment) {
+                  final course = courseMap[enrollment.courseId];
+                  final fee = course?.fee ?? 0.0;
+                  final paid = enrollment.amountPaid;
+                  final balance = (fee - paid).clamp(0, double.infinity);
                   return [
-                    '${payment.date.day}/${payment.date.month}/${payment.date.year}',
-                    course?.name ?? 'General Payment',
-                    payment.amount.toStringAsFixed(2),
-                    payment.description ?? '',
+                    course?.name ?? 'Course',
+                    fee.toStringAsFixed(2),
+                    paid.toStringAsFixed(2),
+                    balance.toStringAsFixed(2),
                   ];
                 }).toList(),
                 headerStyle: pw.TextStyle(
@@ -88,7 +128,7 @@ class ReportServiceMobile implements ReportServiceInterface {
                   font: pw.Font.helveticaBold(),
                 ),
                 border: pw.TableBorder.all(),
-                headerDecoration: pw.BoxDecoration(
+                headerDecoration: const pw.BoxDecoration(
                   color: PdfColors.grey300,
                 ),
                 cellAlignment: pw.Alignment.centerLeft,
@@ -195,7 +235,7 @@ class ReportServiceMobile implements ReportServiceInterface {
                   font: pw.Font.helveticaBold(),
                 ),
                 border: pw.TableBorder.all(),
-                headerDecoration: pw.BoxDecoration(
+                headerDecoration: const pw.BoxDecoration(
                   color: PdfColors.grey300,
                 ),
                 cellAlignment: pw.Alignment.centerLeft,
@@ -253,3 +293,5 @@ class ReportServiceMobile implements ReportServiceInterface {
     }
   }
 }
+
+ReportServiceInterface createReportService() => ReportServiceMobile();

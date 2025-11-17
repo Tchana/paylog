@@ -1,14 +1,15 @@
 import 'dart:convert';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:paylog/core/services/platform/data_import_service_interface.dart';
-import 'package:paylog/data/models/program.dart';
 import 'package:paylog/data/models/course.dart';
 import 'package:paylog/data/models/member.dart';
 import 'package:paylog/data/models/payment.dart';
-import 'package:paylog/data/repositories/program_repository.dart';
+import 'package:paylog/data/models/program.dart';
 import 'package:paylog/data/repositories/course_repository.dart';
 import 'package:paylog/data/repositories/member_repository.dart';
 import 'package:paylog/data/repositories/payment_repository.dart';
+import 'package:paylog/data/repositories/program_repository.dart';
 
 class DataImportServiceMobile implements DataImportServiceInterface {
   final ProgramRepository _programRepository = ProgramRepository();
@@ -139,3 +140,6 @@ class DataImportServiceMobile implements DataImportServiceInterface {
     }
   }
 }
+
+DataImportServiceInterface createDataImportService() =>
+    DataImportServiceMobile();

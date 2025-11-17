@@ -1,15 +1,15 @@
 import 'package:get/get.dart';
 import 'package:paylog/data/models/course.dart';
 import 'package:paylog/data/models/member.dart';
-import 'package:paylog/data/models/payment.dart';
+import 'package:paylog/data/models/enrollment.dart';
 import 'package:paylog/data/repositories/course_repository.dart';
 import 'package:paylog/data/repositories/member_repository.dart';
-import 'package:paylog/data/repositories/payment_repository.dart';
+import 'package:paylog/data/repositories/enrollment_repository.dart';
 
 class CourseController extends GetxController {
   late final CourseRepository _courseRepository;
   late final MemberRepository _memberRepository;
-  late final PaymentRepository _paymentRepository;
+  late final EnrollmentRepository _enrollmentRepository;
 
   var courses = <Course>[].obs;
   var courseMembers = <Member>[].obs;
@@ -25,7 +25,7 @@ class CourseController extends GetxController {
     super.onInit();
     _courseRepository = Get.find<CourseRepository>();
     _memberRepository = Get.find<MemberRepository>();
-    _paymentRepository = Get.find<PaymentRepository>();
+    _enrollmentRepository = Get.find<EnrollmentRepository>();
   }
 
   Future<void> fetchCoursesByProgramId(String programId) async {
@@ -41,14 +41,9 @@ class CourseController extends GetxController {
   Future<void> fetchCourseMembers(String courseId) async {
     try {
       isLoading.value = true;
-      // Fetch all payments for this course
-      final payments = await _paymentRepository.getPaymentsByCourse(courseId);
-
-      // Get unique member IDs from payments
-      final memberIds = <String>{};
-      for (var payment in payments) {
-        memberIds.add(payment.memberId);
-      }
+      final enrollments =
+          await _enrollmentRepository.getEnrollmentsByCourse(courseId);
+      final memberIds = enrollments.map((e) => e.memberId).toSet();
 
       // Fetch members
       final members = <Member>[];
@@ -89,25 +84,42 @@ class CourseController extends GetxController {
       Course course, List<Member> members) async {
     try {
       isLoading.value = true;
-      // For each member, create a payment record to establish the relationship
-      for (var member in members) {
-        // Check if member is already assigned to this course
-        final existingPayments =
-            await _paymentRepository.getPaymentsByCourse(course.id);
-        final isAlreadyAssigned =
-            existingPayments.any((payment) => payment.memberId == member.id);
-
-        if (!isAlreadyAssigned) {
-          // Create a payment with 0 amount to establish the relationship
-          final payment = Payment(
-            memberId: member.id,
-            courseId: course.id,
-            amount: 0.0,
-            date: DateTime.now(),
-            description: 'Course enrollment',
+      for (final member in members) {
+        final existing = await _enrollmentRepository.getEnrollmentsByMember(member.id);
+        final already = existing.any((e) => e.courseId == course.id);
+        if (!already) {
+          final enrollment = Enrollment(
             programId: course.programId,
+            courseId: course.id,
+            memberId: member.id,
           );
-          await _paymentRepository.addPayment(payment);
+          await _enrollmentRepository.addEnrollment(enrollment);
+          if (member.accountBalance > 0) {
+            final remainingFee = course.fee - enrollment.amountPaid;
+            final applied = member.accountBalance >= remainingFee
+                ? remainingFee
+                : member.accountBalance;
+            if (applied > 0) {
+              enrollment.amountPaid += applied;
+              member.accountBalance -= applied;
+              await _enrollmentRepository.updateEnrollment(enrollment);
+              await _memberRepository.updateMember(member);
+            }
+          }
+          final memberEnrollments =
+              await _enrollmentRepository.getEnrollmentsByMember(member.id);
+          double debt = 0.0;
+          for (final e in memberEnrollments) {
+            if (e.programId == course.programId) {
+              final c = await _courseRepository.getCourseById(e.courseId);
+              if (c != null) {
+                final rem = c.fee - e.amountPaid;
+                if (rem > 0) debt += rem;
+              }
+            }
+          }
+          member.totalDebt = debt;
+          await _memberRepository.updateMember(member);
         }
       }
 

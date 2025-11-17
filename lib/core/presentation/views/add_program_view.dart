@@ -58,8 +58,7 @@ class AddProgramView extends GetView<ProgramController> {
                           description: descriptionController.text,
                         );
                         controller.addProgram(program);
-                        Get.back(); // Close the add program screen
-                        Get.toNamed('/programs'); // Navigate to programs list
+                        Get.back(); // Close the add program screen and go back to previous screen
                         Get.snackbar(
                           'Success',
                           'Program added successfully',

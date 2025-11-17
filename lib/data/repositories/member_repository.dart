@@ -35,6 +35,14 @@ class MemberRepository {
       await HiveService.payments.delete(payment.id);
     }
 
+    final enrollments = HiveService.enrollments.values
+        .where((enrollment) => enrollment.memberId == memberId)
+        .toList();
+
+    for (final enrollment in enrollments) {
+      await HiveService.enrollments.delete(enrollment.id);
+    }
+
     await HiveService.members.delete(memberId);
   }
 

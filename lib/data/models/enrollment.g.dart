@@ -1,57 +1,48 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'payment.dart';
+part of 'enrollment.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class PaymentAdapter extends TypeAdapter<Payment> {
+class EnrollmentAdapter extends TypeAdapter<Enrollment> {
   @override
-  final int typeId = 3;
+  final int typeId = 5;
 
   @override
-  Payment read(BinaryReader reader) {
+  Enrollment read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Payment(
+    return Enrollment(
       id: fields[0] as String?,
-      memberId: fields[1] as String,
-      courseId: fields[2] as String?,
-      amount: fields[3] as double,
-      date: fields[4] as DateTime?,
-      description: fields[5] as String?,
-      programId: fields[8] as String,
-      autoAssignedCourses: (fields[9] as List?)?.cast<AllocationEntry>(),
-    )..updatedAt = fields[7] as DateTime;
+      programId: fields[1] as String,
+      courseId: fields[2] as String,
+      memberId: fields[3] as String,
+      amountPaid: fields[4] as double,
+    )..updatedAt = fields[6] as DateTime;
   }
 
   @override
-  void write(BinaryWriter writer, Payment obj) {
+  void write(BinaryWriter writer, Enrollment obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.memberId)
+      ..write(obj.programId)
       ..writeByte(2)
       ..write(obj.courseId)
       ..writeByte(3)
-      ..write(obj.amount)
+      ..write(obj.memberId)
       ..writeByte(4)
-      ..write(obj.date)
+      ..write(obj.amountPaid)
       ..writeByte(5)
-      ..write(obj.description)
-      ..writeByte(6)
       ..write(obj.createdAt)
-      ..writeByte(7)
-      ..write(obj.updatedAt)
-      ..writeByte(8)
-      ..write(obj.programId)
-      ..writeByte(9)
-      ..write(obj.autoAssignedCourses);
+      ..writeByte(6)
+      ..write(obj.updatedAt);
   }
 
   @override
@@ -60,7 +51,7 @@ class PaymentAdapter extends TypeAdapter<Payment> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is PaymentAdapter &&
+      other is EnrollmentAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

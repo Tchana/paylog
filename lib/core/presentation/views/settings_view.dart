@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:paylog/core/presentation/controllers/settings_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -11,23 +12,26 @@ class SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<SettingsView> {
-  String _selectedLanguage = 'en_US';
+  late String _selectedLanguage;
   String _selectedCurrency = '₣';
-  bool _isDarkMode = false;
+  late bool _isDarkMode;
   final SettingsController settingsController = Get.put(SettingsController());
 
   @override
   void initState() {
     super.initState();
+    _selectedLanguage = _getDeviceLocaleTag();
+    _isDarkMode = _isDeviceDarkMode();
     _loadSettings();
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _selectedLanguage = prefs.getString('language') ?? 'en_US';
+      _selectedLanguage =
+          prefs.getString('language') ?? _getDeviceLocaleTag();
       _selectedCurrency = prefs.getString('currency') ?? '₣';
-      _isDarkMode = prefs.getBool('darkMode') ?? false;
+      _isDarkMode = prefs.getBool('darkMode') ?? _isDeviceDarkMode();
     });
   }
 
@@ -36,6 +40,22 @@ class _SettingsViewState extends State<SettingsView> {
     await prefs.setString('language', _selectedLanguage);
     await prefs.setString('currency', _selectedCurrency);
     await prefs.setBool('darkMode', _isDarkMode);
+  }
+
+  String _getDeviceLocaleTag() {
+    final locale =
+        Get.deviceLocale ?? WidgetsBinding.instance.platformDispatcher.locale;
+    final language = locale.languageCode;
+    final country = locale.countryCode?.isNotEmpty == true
+        ? locale.countryCode!
+        : 'US';
+    return '${language}_${country.toUpperCase()}';
+  }
+
+  bool _isDeviceDarkMode() {
+    final brightness =
+        SchedulerBinding.instance.platformDispatcher.platformBrightness;
+    return brightness == Brightness.dark;
   }
 
   @override
@@ -107,7 +127,7 @@ class _SettingsViewState extends State<SettingsView> {
         Text('language'.tr),
         DropdownButton<String>(
           value: _selectedLanguage,
-          items: [
+          items: const [
             DropdownMenuItem(value: 'en_US', child: Text('English')),
             DropdownMenuItem(value: 'fr_FR', child: Text('Français')),
           ],
@@ -118,7 +138,7 @@ class _SettingsViewState extends State<SettingsView> {
               });
               _saveSettings();
               // Update app language
-              Get.updateLocale(Locale(_selectedLanguage.split('_')[0]!,
+              Get.updateLocale(Locale(_selectedLanguage.split('_')[0],
                   _selectedLanguage.split('_')[1]));
             }
           },
@@ -134,7 +154,7 @@ class _SettingsViewState extends State<SettingsView> {
         Text('currency'.tr),
         DropdownButton<String>(
           value: _selectedCurrency,
-          items: [
+          items: const [
             DropdownMenuItem(value: '₣', child: Text('₣ (Francs CFA)')),
             DropdownMenuItem(value: '€', child: Text('€ (Euro)')),
             DropdownMenuItem(value: '\$', child: Text('\$ (Dollar)')),

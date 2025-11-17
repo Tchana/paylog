@@ -8,6 +8,7 @@ import 'package:paylog/data/repositories/payment_repository.dart';
 import 'package:paylog/data/repositories/member_repository.dart';
 import 'package:paylog/data/repositories/course_repository.dart';
 import 'package:paylog/core/presentation/controllers/member_controller.dart';
+import 'package:paylog/core/services/payment_allocator.dart';
 
 class PaymentController extends GetxController {
   final PaymentRepository _repository = Get.find();
@@ -42,77 +43,21 @@ class PaymentController extends GetxController {
     required String programId,
   }) async {
     try {
-      final payment = Payment(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      final allocator = Get.find<PaymentAllocator>();
+      final payment = await allocator.allocateAndRecordPayment(
         memberId: memberId,
-        courseId: courseId,
+        programId: programId,
         amount: amount,
         date: date,
         description: description,
-        programId: programId,
       );
-
-      await _repository.addPayment(payment);
       payments.add(payment);
 
-      // Update member's financial information
-      final member = await _memberRepository.getMemberById(memberId);
-      if (member != null) {
-        // Create a copy of the member to modify
-        final updatedMember = Member(
-          id: member.id,
-          programId: member.programId,
-          name: member.name,
-          contactInfo: member.contactInfo,
-          accountBalance: member.accountBalance,
-          totalDebt: member.totalDebt,
-        );
-
-        if (courseId == null) {
-          // General payment - add to account balance (credit)
-          updatedMember.accountBalance += amount;
-        } else {
-          // Course-specific payment
-          // First, try to use existing credit
-          if (updatedMember.accountBalance > 0) {
-            final creditToUse = updatedMember.accountBalance >= amount
-                ? amount
-                : updatedMember.accountBalance;
-            updatedMember.accountBalance -= creditToUse;
-            amount -= creditToUse;
-
-            if (creditToUse > 0) {
-              Get.snackbar(
-                'Credit Applied',
-                'credit_applied'.trParams(
-                    {'name': member.name, 'amount': creditToUse.toString()}),
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: Colors.blue.withOpacity(0.8),
-                colorText: Colors.white,
-              );
-            }
-          }
-
-          // If there's still amount to pay, it should reduce debt
-          // For simplicity, we'll reduce the total debt
-          if (amount > 0) {
-            updatedMember.totalDebt = updatedMember.totalDebt > amount
-                ? updatedMember.totalDebt - amount
-                : 0;
-          }
-        }
-
-        // Update the member in repository
-        updatedMember.updateTimestamp();
-        await _memberRepository.updateMember(updatedMember);
-      }
-
-      // Refresh member data in MemberController
       final memberController = Get.find<MemberController>();
       await memberController.fetchMemberPayments(memberId);
       if (memberController.members.isNotEmpty) {
-        await memberController
-            .fetchMembersByProgramId(memberController.members.first.programId);
+        await memberController.fetchMembersByProgramId(
+            memberController.members.first.programId);
       }
 
       // Show success message

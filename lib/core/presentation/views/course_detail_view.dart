@@ -4,6 +4,9 @@ import 'package:paylog/core/presentation/controllers/course_controller.dart';
 import 'package:paylog/core/presentation/controllers/member_controller.dart';
 import 'package:paylog/data/models/course.dart';
 import 'package:paylog/data/models/member.dart';
+import 'package:paylog/data/models/enrollment.dart';
+import 'package:paylog/data/repositories/enrollment_repository.dart';
+import 'package:intl/intl.dart';
 
 class CourseDetailView extends GetView<CourseController> {
   const CourseDetailView({super.key});
@@ -73,7 +76,7 @@ class CourseDetailView extends GetView<CourseController> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${'created_on'.tr}: ${course.createdAt.day}/${course.createdAt.month}/${course.createdAt.year}',
+                        '${'created_on'.tr}: ${_formatDate(course.createdAt)}',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -97,13 +100,21 @@ class CourseDetailView extends GetView<CourseController> {
                         itemBuilder: (context, index) {
                           final member = controller.courseMembers[index];
                           return Card(
-                            child: ListTile(
-                              title: Text(member.name),
-                              subtitle: Text(member.contactInfo ?? ''),
-                              trailing: const Icon(Icons.arrow_forward_ios),
-                              onTap: () {
-                                Get.toNamed('/member-detail',
-                                    arguments: member);
+                            child: FutureBuilder<Widget>(
+                              future: _buildMemberCourseStatus(context, course, member),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return const ListTile(
+                                    title: Text('Loading...'),
+                                  );
+                                }
+                                return snapshot.data ?? ListTile(
+                                  title: Text(member.name),
+                                  trailing: const Icon(Icons.arrow_forward_ios),
+                                  onTap: () {
+                                    Get.toNamed('/member-detail', arguments: member);
+                                  },
+                                );
                               },
                             ),
                           );
@@ -156,8 +167,7 @@ class CourseDetailView extends GetView<CourseController> {
       confirmTextColor: Colors.white,
       onConfirm: () {
         controller.deleteCourse(course.id);
-        Get.back();
-        Get.back();
+        Get.back(); // Close the dialog
         Get.snackbar(
           'Success',
           'Course deleted successfully',
@@ -266,5 +276,36 @@ class CourseDetailView extends GetView<CourseController> {
   void _assignMembersToCourse(Course course, List<Member> members) {
     // Assign selected members to course
     controller.assignMembersToCourse(course, members);
+  }
+
+  String _formatDate(DateTime date) {
+    final locale = Get.locale;
+    final tag = locale == null
+        ? 'en_US'
+        : '${locale.languageCode}_${locale.countryCode ?? 'US'}';
+    final formatter = DateFormat.yMMMd(tag);
+    return formatter.format(date);
+  }
+
+  Future<Widget> _buildMemberCourseStatus(
+      BuildContext context, Course course, Member member) async {
+    final enrollmentRepository = EnrollmentRepository();
+    final enrollments = await enrollmentRepository.getEnrollmentsByCourse(course.id);
+    final enrollment = enrollments.firstWhere(
+      (e) => e.memberId == member.id,
+      orElse: () => Enrollment(programId: course.programId, courseId: course.id, memberId: member.id),
+    );
+    final paid = enrollment.amountPaid;
+    final balance = course.fee - paid;
+    return ListTile(
+      title: Text(member.name),
+      subtitle: Text(
+        'Paid: ₣${paid.toStringAsFixed(0)} • Owes: ₣${balance.clamp(0, double.infinity).toStringAsFixed(0)}',
+      ),
+      trailing: const Icon(Icons.arrow_forward_ios),
+      onTap: () {
+        Get.toNamed('/member-detail', arguments: member);
+      },
+    );
   }
 }

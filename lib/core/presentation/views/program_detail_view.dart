@@ -4,6 +4,11 @@ import 'package:paylog/core/presentation/controllers/program_controller.dart';
 import 'package:paylog/core/presentation/controllers/course_controller.dart';
 import 'package:paylog/core/presentation/controllers/member_controller.dart';
 import 'package:paylog/data/models/program.dart';
+import 'package:paylog/data/repositories/payment_repository.dart';
+import 'package:paylog/data/repositories/enrollment_repository.dart';
+import 'package:paylog/data/repositories/course_repository.dart';
+import 'package:paylog/data/repositories/member_repository.dart';
+import 'package:intl/intl.dart';
 
 class ProgramDetailView extends GetView<ProgramController> {
   const ProgramDetailView({super.key});
@@ -200,7 +205,7 @@ class ProgramDetailView extends GetView<ProgramController> {
                     ],
                     const SizedBox(height: 16),
                     Text(
-                      '${'created_on'.tr}: ${program.createdAt.day}/${program.createdAt.month}/${program.createdAt.year}',
+                      '${'created_on'.tr}: ${_formatDate(program.createdAt)}',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -245,6 +250,53 @@ class ProgramDetailView extends GetView<ProgramController> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+            FutureBuilder<Map<String, double>>(
+              future: _computeProgramTotals(program),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const LinearProgressIndicator();
+                }
+                final totals = snapshot.data!;
+                return Row(
+                  children: [
+                    Expanded(
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              Text(
+                                memberController.formatCurrency(totals['collected'] ?? 0.0),
+                                style: Theme.of(context).textTheme.headlineMedium,
+                              ),
+                              Text('total_collected'.tr),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              Text(
+                                memberController.formatCurrency(totals['pending'] ?? 0.0),
+                                style: Theme.of(context).textTheme.headlineMedium,
+                              ),
+                              Text('total_pending'.tr),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -291,6 +343,52 @@ class ProgramDetailView extends GetView<ProgramController> {
         );
       },
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final locale = Get.locale;
+    final tag = locale == null
+        ? 'en_US'
+        : '${locale.languageCode}_${locale.countryCode ?? 'US'}';
+    final formatter = DateFormat.yMMMd(tag);
+    return formatter.format(date);
+  }
+
+  Future<Map<String, double>> _computeProgramTotals(Program program) async {
+    final paymentRepository = PaymentRepository();
+    final enrollmentRepository = EnrollmentRepository();
+    final courseRepository = CourseRepository();
+    final memberRepository = MemberRepository();
+    final payments = await paymentRepository.getPaymentsByProgram(program.id);
+    final enrollments = await enrollmentRepository.getEnrollmentsByProgram(program.id);
+    final courses = await courseRepository.getAllCourses();
+    final members = await memberRepository.getMembersByProgram(program.id);
+    final courseMap = {for (final c in courses) c.id: c};
+
+    double collected = 0.0;
+    for (final p in payments) {
+      collected += p.amount;
+    }
+
+    double pending = 0.0;
+    for (final m in members) {
+      final ms = enrollments.where((e) => e.memberId == m.id).toList();
+      double debt = 0.0;
+      for (final e in ms) {
+        final c = courseMap[e.courseId];
+        if (c != null) {
+          final remaining = c.fee - e.amountPaid;
+          if (remaining > 0) debt += remaining;
+        }
+      }
+      final memberPending = debt - m.accountBalance;
+      if (memberPending > 0) pending += memberPending;
+    }
+
+    return {
+      'collected': collected,
+      'pending': pending,
+    };
   }
 
   void _confirmDeleteProgram(BuildContext context, Program program) {

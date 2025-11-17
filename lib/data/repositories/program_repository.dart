@@ -21,27 +21,39 @@ class ProgramRepository {
     final members = HiveService.members.values
         .where((member) => member.programId == programId)
         .toList();
-    
+
     for (final member in members) {
       await HiveService.members.delete(member.id);
     }
-    
+
     final courses = HiveService.courses.values
         .where((course) => course.programId == programId)
         .toList();
-    
+
     for (final course in courses) {
       await HiveService.courses.delete(course.id);
     }
-    
+
     final payments = HiveService.payments.values
         .where((payment) => payment.programId == programId)
         .toList();
-    
+
     for (final payment in payments) {
       await HiveService.payments.delete(payment.id);
     }
-    
+
+    final enrollments = HiveService.enrollments.values
+        .where((enrollment) => enrollment.programId == programId)
+        .toList();
+
+    for (final enrollment in enrollments) {
+      await HiveService.enrollments.delete(enrollment.id);
+    }
+
     await HiveService.programs.delete(programId);
+  }
+
+  Future<Program?> getProgramById(String programId) async {
+    return HiveService.programs.get(programId);
   }
 }

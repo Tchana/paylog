@@ -7,7 +7,9 @@ import 'package:paylog/core/services/platform/platform_service_factory.dart';
 import 'package:paylog/core/services/platform/report_service_interface.dart';
 import 'package:paylog/data/models/member.dart';
 import 'package:paylog/data/models/payment.dart';
+import 'package:paylog/data/repositories/enrollment_repository.dart';
 import 'package:paylog/data/repositories/course_repository.dart';
+import 'package:intl/intl.dart';
 
 class MemberDetailView extends GetView<MemberController> {
   const MemberDetailView({super.key});
@@ -29,7 +31,9 @@ class MemberDetailView extends GetView<MemberController> {
         title: Text(member.name),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
+          onPressed: () {
+            Get.back();
+          },
         ),
         actions: [
           IconButton(
@@ -99,8 +103,13 @@ class MemberDetailView extends GetView<MemberController> {
               const SizedBox(height: 16),
               // Record payment button moved here
               ElevatedButton.icon(
-                onPressed: () {
-                  Get.toNamed('/record-payment', arguments: member);
+                onPressed: () async {
+                  final result =
+                      await Get.toNamed('/record-payment', arguments: member);
+                  if (result == true) {
+                    await controller.fetchMemberPayments(member.id);
+                    await controller.fetchMembersByProgramId(member.programId);
+                  }
                 },
                 icon: const Icon(Icons.add),
                 label: Text('record_payment'.tr),
@@ -118,6 +127,23 @@ class MemberDetailView extends GetView<MemberController> {
                           return _buildPaymentCard(context, payment);
                         },
                       ),
+              ),
+              const SizedBox(height: 24),
+              // Per-course summary
+              Text(
+                'summary'.tr,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 16),
+              FutureBuilder<Widget>(
+                future: _buildCourseSummary(context, member),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const LinearProgressIndicator();
+                  }
+                  if (snapshot.hasData) return snapshot.data!;
+                  return const SizedBox.shrink();
+                },
               ),
               const SizedBox(height: 24),
               // Action buttons - removed back button, kept only download report
@@ -243,12 +269,21 @@ class MemberDetailView extends GetView<MemberController> {
               _formatDate(payment.date),
               style: Theme.of(context).textTheme.bodySmall,
             ),
+            if (payment.autoAssignedCourses.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                'auto_assigned_courses'.tr,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 4),
+              ...payment.autoAssignedCourses.map((a) => Text(
+                    '- ${a.courseName}: ${controller.formatCurrency(a.amountApplied)}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  )),
+            ],
           ],
         ),
-        trailing: Text(
-          _getCourseName(payment.courseId),
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        trailing: null,
         onTap: () {
           // Navigate to edit payment screen
           Get.toNamed('/edit-payment', arguments: payment);
@@ -270,13 +305,13 @@ class MemberDetailView extends GetView<MemberController> {
             ),
             const SizedBox(height: 16),
             Text(
-              'no_payments_recorded'.tr,
+              'no_payments_yet'.tr,
               style: Theme.of(context).textTheme.bodyLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'record_first_payment'.tr,
+              'record_payment'.tr,
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -316,15 +351,44 @@ class MemberDetailView extends GetView<MemberController> {
     );
   }
 
-  // Helper methods to format date and get course name
+  // Helper methods to format date
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    final locale = Get.locale;
+    final tag = locale == null
+        ? 'en_US'
+        : '${locale.languageCode}_${locale.countryCode ?? 'US'}';
+    final formatter = DateFormat.yMMMd(tag);
+    return formatter.format(date);
   }
 
-  String _getCourseName(String? courseId) {
-    if (courseId == null) return 'General Payment';
-    // In a real implementation, we would fetch the course name from the repository
-    // For now, we'll just return a placeholder
-    return 'Course';
+  Future<Widget> _buildCourseSummary(BuildContext context, Member member) async {
+    final enrollmentRepository = EnrollmentRepository();
+    final courseRepository = CourseRepository();
+    final enrollments = await enrollmentRepository.getEnrollmentsByMember(member.id);
+    if (enrollments.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('no_members_enrolled'.tr),
+        ),
+      );
+    }
+    final courses = await courseRepository.getAllCourses();
+    final courseMap = {for (final c in courses) c.id: c};
+    return Column(
+      children: enrollments.map((e) {
+        final course = courseMap[e.courseId];
+        final fee = course?.fee ?? 0.0;
+        final paid = e.amountPaid;
+        final balance = fee - paid;
+        return Card(
+          child: ListTile(
+            title: Text(course?.name ?? 'Course'),
+            subtitle: Text(
+                '${'course_fee'.tr}: ${controller.formatCurrency(fee)}\n${'total_paid'.tr}: ${controller.formatCurrency(paid)}\n${'balance_due'.tr}: ${controller.formatCurrency(balance.clamp(0, double.infinity))}'),
+          ),
+        );
+      }).toList(),
+    );
   }
 }

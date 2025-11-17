@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'dart:html' as html;
+
 import 'package:paylog/core/services/platform/data_export_service_interface.dart';
-import 'package:paylog/data/models/program.dart';
 import 'package:paylog/data/models/course.dart';
 import 'package:paylog/data/models/member.dart';
 import 'package:paylog/data/models/payment.dart';
-import 'package:paylog/data/repositories/program_repository.dart';
+import 'package:paylog/data/models/program.dart';
 import 'package:paylog/data/repositories/course_repository.dart';
 import 'package:paylog/data/repositories/member_repository.dart';
 import 'package:paylog/data/repositories/payment_repository.dart';
+import 'package:paylog/data/repositories/program_repository.dart';
 
 class DataExportServiceWeb implements DataExportServiceInterface {
   final ProgramRepository _programRepository = ProgramRepository();
@@ -98,24 +99,28 @@ class DataExportServiceWeb implements DataExportServiceInterface {
     final courseMap = {for (var course in courses) course.id: course};
 
     final csv = StringBuffer();
-    // CSV header
-    csv.writeln('Payment ID,Member Name,Course Name,Amount,Date,Description');
+    csv.writeln(_csvRow([
+      'Payment ID',
+      'Member Name',
+      'Course Name',
+      'Amount',
+      'Date',
+      'Description'
+    ]));
 
     // CSV rows
     for (var payment in payments) {
       final member = memberMap[payment.memberId];
       final course = courseMap[payment.courseId];
 
-      final row = [
+      csv.writeln(_csvRow([
         payment.id,
         member?.name ?? 'Unknown',
         course?.name ?? 'General',
         payment.amount.toString(),
         payment.date.toIso8601String(),
         payment.description ?? '',
-      ].join(',');
-
-      csv.writeln(row);
+      ]));
     }
 
     return csv.toString();
@@ -136,3 +141,14 @@ class DataExportServiceWeb implements DataExportServiceInterface {
     html.Url.revokeObjectUrl(url);
   }
 }
+
+DataExportServiceInterface createDataExportService() =>
+    DataExportServiceWeb();
+
+String _csvValue(String value) {
+  final escaped = value.replaceAll('"', '""');
+  return '"$escaped"';
+}
+
+String _csvRow(List<String> values) =>
+    values.map((value) => _csvValue(value)).join(',');

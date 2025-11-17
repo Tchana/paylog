@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:paylog/data/models/member.dart';
 import 'package:paylog/data/models/payment.dart';
 import 'package:paylog/data/repositories/member_repository.dart';
@@ -19,10 +19,7 @@ class MemberController extends GetxController {
     totalDebt: 0.0,
   ).obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-  }
+  // Removed unnecessary override
 
   Future<void> fetchMembersByProgramId(String programId) async {
     try {
@@ -77,6 +74,8 @@ class MemberController extends GetxController {
   }
 
   String formatCurrency(double amount) {
-    return '₣${amount.toStringAsFixed(0)}';
+    final locale = Get.locale?.toLanguageTag() ?? 'en_US';
+    final formatter = NumberFormat.currency(locale: locale, symbol: '₣', decimalDigits: 0);
+    return formatter.format(amount);
   }
 }

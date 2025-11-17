@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
@@ -52,24 +51,28 @@ class UnifiedServiceMobile implements UnifiedServiceInterface {
     final courseMap = {for (var course in courses) course.id: course};
 
     final csv = StringBuffer();
-    // CSV header
-    csv.writeln('Payment ID,Member Name,Course Name,Amount,Date,Description');
+    csv.writeln(_csvRow([
+      'Payment ID',
+      'Member Name',
+      'Course Name',
+      'Amount',
+      'Date',
+      'Description'
+    ]));
 
     // CSV rows
     for (var payment in payments) {
       final member = memberMap[payment.memberId];
       final course = courseMap[payment.courseId];
 
-      final row = [
+      csv.writeln(_csvRow([
         payment.id,
         member?.name ?? 'Unknown',
         course?.name ?? 'General',
         payment.amount.toString(),
         payment.date.toIso8601String(),
         payment.description ?? '',
-      ].join(',');
-
-      csv.writeln(row);
+      ]));
     }
 
     return csv.toString();
@@ -200,7 +203,7 @@ class UnifiedServiceMobile implements UnifiedServiceInterface {
                 level: 0,
                 child: pw.Text(
                   'Payment Report for ${member.name}',
-                  style: pw.TextStyle(fontSize: 24),
+                  style: const pw.TextStyle(fontSize: 24),
                 ),
               ),
               pw.SizedBox(height: 20),
@@ -236,7 +239,7 @@ class UnifiedServiceMobile implements UnifiedServiceInterface {
                 }).toList(),
                 headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                 border: pw.TableBorder.all(),
-                headerDecoration: pw.BoxDecoration(
+                headerDecoration: const pw.BoxDecoration(
                   color: PdfColors.grey300,
                 ),
                 cellAlignment: pw.Alignment.centerLeft,
@@ -244,7 +247,7 @@ class UnifiedServiceMobile implements UnifiedServiceInterface {
               pw.SizedBox(height: 20),
               pw.Text(
                 'Report Generated on ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-                style: pw.TextStyle(fontSize: 12, color: PdfColors.grey),
+                style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey),
               ),
             ],
           );
@@ -284,7 +287,7 @@ class UnifiedServiceMobile implements UnifiedServiceInterface {
                 level: 0,
                 child: pw.Text(
                   'Payment Summary Report',
-                  style: pw.TextStyle(fontSize: 24),
+                  style: const pw.TextStyle(fontSize: 24),
                 ),
               ),
               pw.SizedBox(height: 20),
@@ -293,11 +296,11 @@ class UnifiedServiceMobile implements UnifiedServiceInterface {
                 children: [
                   pw.Text(
                     'Total Payments: ${payments.length}',
-                    style: pw.TextStyle(fontSize: 16),
+                    style: const pw.TextStyle(fontSize: 16),
                   ),
                   pw.Text(
                     'Total Amount: ${totalPayments.toStringAsFixed(2)}',
-                    style: pw.TextStyle(fontSize: 16),
+                    style: const pw.TextStyle(fontSize: 16),
                   ),
                 ],
               ),
@@ -324,7 +327,7 @@ class UnifiedServiceMobile implements UnifiedServiceInterface {
                 }).toList(),
                 headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                 border: pw.TableBorder.all(),
-                headerDecoration: pw.BoxDecoration(
+                headerDecoration: const pw.BoxDecoration(
                   color: PdfColors.grey300,
                 ),
                 cellAlignment: pw.Alignment.centerLeft,
@@ -332,7 +335,7 @@ class UnifiedServiceMobile implements UnifiedServiceInterface {
               pw.SizedBox(height: 20),
               pw.Text(
                 'Report Generated on ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-                style: pw.TextStyle(fontSize: 12, color: PdfColors.grey),
+                style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey),
               ),
             ],
           );
@@ -439,3 +442,11 @@ class UnifiedServiceMobile implements UnifiedServiceInterface {
     }
   }
 }
+
+String _csvValue(String value) {
+  final escaped = value.replaceAll('"', '""');
+  return '"$escaped"';
+}
+
+String _csvRow(List<String> values) =>
+    values.map((value) => _csvValue(value)).join(',');

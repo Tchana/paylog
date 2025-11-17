@@ -23,7 +23,7 @@ class ProgramCard extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-          child: Icon(
+          child: const Icon(
             Icons.workspace_premium_outlined,
             color: AppTheme.primaryColor,
           ),
@@ -37,12 +37,12 @@ class ProgramCard extends StatelessWidget {
         trailing: PopupMenuButton(
           itemBuilder: (context) => [
             PopupMenuItem(
-              child: Text('edit'.tr),
               onTap: onTap,
+              child: Text('edit'.tr),
             ),
             PopupMenuItem(
-              child: Text('delete'.tr, style: TextStyle(color: Colors.red)),
               onTap: onDelete,
+              child: Text('delete'.tr, style: TextStyle(color: Colors.red)),
             ),
           ],
         ),

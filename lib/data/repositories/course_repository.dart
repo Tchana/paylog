@@ -26,6 +26,13 @@ class CourseRepository {
   }
 
   Future<void> deleteCourse(String courseId) async {
+    // Delete enrollments linked to this course
+    final enrollments = HiveService.enrollments.values
+        .where((enrollment) => enrollment.courseId == courseId)
+        .toList();
+    for (final enrollment in enrollments) {
+      await HiveService.enrollments.delete(enrollment.id);
+    }
     await HiveService.courses.delete(courseId);
   }
 

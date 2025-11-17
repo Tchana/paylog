@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:paylog/core/app/theme/app_theme.dart';
 import 'package:paylog/core/presentation/controllers/dashboard_controller.dart';
 import 'package:paylog/data/models/member.dart';
@@ -9,10 +10,13 @@ class DashboardView extends GetView<DashboardController> {
 
   @override
   Widget build(BuildContext context) {
-    // Load dashboard data after the widget is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.loadDashboardData();
-    });
+    Future<void> navigateAndRefresh(String route) async {
+      final navigation = Get.toNamed(route);
+      if (navigation != null) {
+        await navigation;
+      }
+      await controller.loadDashboardData();
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -21,8 +25,7 @@ class DashboardView extends GetView<DashboardController> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              // Navigate to settings
-              Get.toNamed('/settings');
+              navigateAndRefresh('/settings');
             },
           ),
         ],
@@ -62,19 +65,22 @@ class DashboardView extends GetView<DashboardController> {
                 ],
               ),
               const SizedBox(height: 16),
-              // View all programs button
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Get.toNamed('/programs');
-                      },
-                      icon: const Icon(Icons.list),
-                      label: Text('view_all_programs'.tr),
-                    ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    navigateAndRefresh('/programs');
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.primaryColor,
+                    padding: EdgeInsets.zero,
+                    textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
                   ),
-                ],
+                  child: Text('view_all_programs'.tr),
+                ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -107,41 +113,6 @@ class DashboardView extends GetView<DashboardController> {
                 ],
               ),
               const SizedBox(height: 32),
-              // Members with pending balance
-              Text(
-                'most_pending'.tr,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 16),
-              Obx(
-                () => controller.membersWithPendingBalance.isEmpty
-                    ? _buildEmptyState(context, 'no_members_yet'.tr)
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: controller.membersWithPendingBalance.length,
-                        itemBuilder: (context, index) {
-                          final member =
-                              controller.membersWithPendingBalance[index];
-                          return Card(
-                            child: ListTile(
-                              title: Text(member.name),
-                              subtitle: Text(
-                                  '${'pending_amount'.tr}: ${controller.formatCurrency(member.pendingBalance)}'),
-                              trailing: Text(
-                                controller
-                                    .formatCurrency(member.pendingBalance),
-                                style: const TextStyle(
-                                  color: AppTheme.warningColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-              const SizedBox(height: 32),
               // Recent payments
               Text(
                 'recent_payments'.tr,
@@ -161,8 +132,7 @@ class DashboardView extends GetView<DashboardController> {
                             child: ListTile(
                               title: Text(
                                   controller.formatCurrency(payment.amount)),
-                              subtitle: Text(
-                                  '${payment.date.day}/${payment.date.month}/${payment.date.year}'),
+                              subtitle: Text(_formatDate(payment.date)),
                               trailing: FutureBuilder<Member?>(
                                 future:
                                     controller.getMemberById(payment.memberId),
@@ -180,27 +150,13 @@ class DashboardView extends GetView<DashboardController> {
                       ),
               ),
               const SizedBox(height: 16),
-              // View all programs button
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Get.toNamed('/programs');
-                      },
-                      icon: const Icon(Icons.list),
-                      label: Text('view_all_programs'.tr),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Get.toNamed('/add-program');
+          navigateAndRefresh('/add-program');
         },
         child: const Icon(Icons.add),
       ),
@@ -241,5 +197,14 @@ class DashboardView extends GetView<DashboardController> {
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final locale = Get.locale;
+    final tag = locale == null
+        ? 'en_US'
+        : '${locale.languageCode}_${locale.countryCode ?? 'US'}';
+    final formatter = DateFormat.yMMMd(tag);
+    return formatter.format(date);
   }
 }
