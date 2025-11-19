@@ -19,15 +19,6 @@ class ProgramListView extends GetView<ProgramController> {
     });
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('programs_title'.tr),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: controller.fetchPrograms,
-          ),
-        ],
-      ),
       body: Obx(
         () => controller.isLoading.value
             ? const Center(child: CircularProgressIndicator())
@@ -36,7 +27,7 @@ class ProgramListView extends GetView<ProgramController> {
                 child: controller.programs.isEmpty
                     ? _buildEmptyState(context)
                     : ListView.builder(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
                         itemCount: controller.programs.length,
                         itemBuilder: (context, index) {
                           final program = controller.programs[index];

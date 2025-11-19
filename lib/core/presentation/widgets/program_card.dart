@@ -1,7 +1,7 @@
 // presentation/widgets/program_card.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:paylog/core/app/theme/app_theme.dart';
+import 'package:paylog/core/app/theme/app_colors.dart';
 import 'package:paylog/data/models/program.dart';
 
 class ProgramCard extends StatelessWidget {
@@ -22,10 +22,10 @@ class ProgramCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+          backgroundColor: AppColors.primary.withOpacity(0.1),
           child: const Icon(
             Icons.workspace_premium_outlined,
-            color: AppTheme.primaryColor,
+            color: AppColors.primary,
           ),
         ),
         title: Text(program.name),
@@ -42,7 +42,7 @@ class ProgramCard extends StatelessWidget {
             ),
             PopupMenuItem(
               onTap: onDelete,
-              child: Text('delete'.tr, style: TextStyle(color: Colors.red)),
+              child: Text('delete'.tr, style: const TextStyle(color: Colors.red)),
             ),
           ],
         ),

@@ -12,8 +12,10 @@ import 'package:paylog/core/presentation/views/edit_course_view.dart';
 import 'package:paylog/core/presentation/views/record_payment_view.dart';
 import 'package:paylog/core/presentation/views/settings_view.dart';
 import 'package:paylog/core/presentation/views/members_list_view.dart';
+import 'package:paylog/core/presentation/views/main_layout.dart';
 
 class AppRoutes {
+  static const String main = '/';
   static const String home = '/home';
   static const String programs = '/programs';
   static const String members = '/members';
@@ -31,6 +33,10 @@ class AppRoutes {
 
 class AppPages {
   static final routes = [
+    GetPage(
+      name: AppRoutes.main,
+      page: () => const MainLayout(),
+    ),
     GetPage(
       name: AppRoutes.home,
       page: () => const DashboardView(),

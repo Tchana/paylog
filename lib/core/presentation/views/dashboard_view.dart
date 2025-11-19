@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:paylog/core/app/theme/app_theme.dart';
+import 'package:paylog/core/app/theme/app_colors.dart';
 import 'package:paylog/core/presentation/controllers/dashboard_controller.dart';
 import 'package:paylog/data/models/member.dart';
 
@@ -19,20 +19,9 @@ class DashboardView extends GetView<DashboardController> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('dashboard_title'.tr),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              navigateAndRefresh('/settings');
-            },
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -47,10 +36,10 @@ class DashboardView extends GetView<DashboardController> {
                             '${controller.totalPrograms.value}',
                             style: Theme.of(context).textTheme.headlineMedium,
                           )),
-                      AppTheme.primaryColor,
+                      AppColors.primary,
+                      Icons.category,
                     ),
                   ),
-                  const SizedBox(width: 16),
                   Expanded(
                     child: _buildSummaryCard(
                       context,
@@ -59,28 +48,11 @@ class DashboardView extends GetView<DashboardController> {
                             '${controller.totalMembers.value}',
                             style: Theme.of(context).textTheme.headlineMedium,
                           )),
-                      AppTheme.secondaryColor,
+                      AppColors.secondary,
+                      Icons.people,
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    navigateAndRefresh('/programs');
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppTheme.primaryColor,
-                    padding: EdgeInsets.zero,
-                    textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.underline,
-                        ),
-                  ),
-                  child: Text('view_all_programs'.tr),
-                ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -94,10 +66,10 @@ class DashboardView extends GetView<DashboardController> {
                                 controller.totalCollected.value),
                             style: Theme.of(context).textTheme.headlineMedium,
                           )),
-                      AppTheme.successColor,
+                      AppColors.success,
+                      Icons.attach_money,
                     ),
                   ),
-                  const SizedBox(width: 16),
                   Expanded(
                     child: _buildSummaryCard(
                       context,
@@ -107,7 +79,8 @@ class DashboardView extends GetView<DashboardController> {
                                 .formatCurrency(controller.totalPending.value),
                             style: Theme.of(context).textTheme.headlineMedium,
                           )),
-                      AppTheme.warningColor,
+                      AppColors.warning,
+                      Icons.pending_actions,
                     ),
                   ),
                 ],
@@ -154,31 +127,40 @@ class DashboardView extends GetView<DashboardController> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          navigateAndRefresh('/add-program');
-        },
-        child: const Icon(Icons.add),
-      ),
     );
   }
 
   Widget _buildSummaryCard(
-      BuildContext context, String title, Widget value, Color color) {
+      BuildContext context, String title, Widget value, Color color, IconData icon) {
     return Card(
-      color: color.withOpacity(0.1),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: color,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: color),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             value,
           ],
         ),
